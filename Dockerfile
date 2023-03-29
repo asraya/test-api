@@ -14,7 +14,7 @@ RUN go mod download
 RUN go build -o main .
 
 # Expose port 8080 for incoming traffic
-EXPOSE 8080
+EXPOSE 9091
 
 # Define the command to run the app when the container starts
 CMD ["/app/main"]
