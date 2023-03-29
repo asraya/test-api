@@ -8,6 +8,7 @@ import (
 	"api-test/app/repository"
 	"api-test/config"
 	"api-test/helpers"
+	"api-test/middleware"
 	"api-test/service"
 
 	"github.com/gin-gonic/gin"
@@ -16,11 +17,16 @@ import (
 )
 
 var (
-	db *gorm.DB = config.SetupDatabaseConnection()
+	db         *gorm.DB           = config.SetupDatabaseConnection()
+	jwtService service.JWTService = service.NewJWTService()
 
-	movieRepository repository.MovieRepository = repository.NewMovieRepository(db)
-	movieService    service.MovieService       = service.NewMovieService(movieRepository)
-	movieHandler    handler.MovieHandler       = handler.NewMovieHandler(movieService)
+	elemesRepository repository.ElemesRepository = repository.NewElemesRepository(db)
+	elemesService    service.ElemesService       = service.NewElemesService(elemesRepository)
+	elemesHandler    handler.ElemesHandler       = handler.NewElemesHandler(elemesService, jwtService)
+
+	userRepository repository.UserRepository = repository.NewUserRepository(db)
+	authService    service.AuthService       = service.NewAuthService(userRepository)
+	authHandler    handler.AuthHandler       = handler.NewAuthHandler(authService, jwtService)
 )
 
 func SetupRouter() *gin.Engine {
@@ -30,28 +36,35 @@ func SetupRouter() *gin.Engine {
 	// CORS
 	r.Use(CORSMiddleware())
 
+	// r.POST("/file", elemesHandler.FileUpload())
+	// r.POST("/remote", elemesHandler.RemoteUpload())
 	// Routes
-	v1 := r.Group("api/v1")
+	v1 := r.Group("api/v1", middleware.AuthorizeJWT(jwtService))
 	{
 		routes := v1.Group("/")
 		{
-			n := routes.Group("/movie")
+			n := routes.Group("/elemes")
 			{
 				n.GET("", func(context *gin.Context) {
 					code := http.StatusOK
 					pagination := helpers.GeneratePaginationRequest(context)
-					response := movieService.PaginationMovie(movieRepository, context, pagination)
+					response := elemesService.PaginationElemes(elemesRepository, context, pagination)
 					if !response.Status {
 						code = http.StatusBadRequest
 					}
 					context.JSON(code, response)
 				})
-				n.POST("/", movieHandler.Insert)
-				n.GET("/:id", movieHandler.FindByID)
-				n.PUT("/:id", movieHandler.Update)
-				n.DELETE("/:id", movieHandler.Delete)
+				n.POST("/", elemesHandler.Insert)
+				n.GET("/:id", elemesHandler.FindByID)
+				n.PUT("/:id", elemesHandler.Update)
+				n.DELETE("/:id", elemesHandler.Delete)
 			}
 
+		}
+		authRoutes := r.Group("api/auth")
+		{
+			authRoutes.POST("/login", authHandler.Login)
+			authRoutes.POST("/register", authHandler.Register)
 		}
 	}
 	return r

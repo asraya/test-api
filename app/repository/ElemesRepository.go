@@ -10,61 +10,68 @@ import (
 	"gorm.io/gorm"
 )
 
-//MovieRepository is a ....
-type MovieRepository interface {
-	InsertMovie(m models.Movie) models.Movie
-	UpdateMovie(m models.Movie) models.Movie
-	DeleteMovie(m models.Movie)
-	AllMovie() []models.Movie
-	FindMovieByID(movieID uint64) models.Movie
-	PaginationMovie(pagination *dto.Pagination) (RepositoryResult, int)
+// ElemesRepository is a ....
+type ElemesRepository interface {
+	InsertElemes(m models.Elemes) models.Elemes
+	UpdateElemes(m models.Elemes) models.Elemes
+	DeleteElemes(m models.Elemes)
+	AllElemes() []models.Elemes
+	FindElemesByID(elemesID uint64) models.Elemes
+	GetCategoryCourse(elemesID uint64) models.Elemes
+	PaginationElemes(pagination *dto.Pagination) (RepositoryResult, int)
 }
 
-type movieConnection struct {
+type elemesConnection struct {
 	connection *gorm.DB
 }
 
-//NewMovieRepository
-func NewMovieRepository(dbConn *gorm.DB) MovieRepository {
-	return &movieConnection{
+// NewElemesRepository
+func NewElemesRepository(dbConn *gorm.DB) ElemesRepository {
+	return &elemesConnection{
 		connection: dbConn,
 	}
 }
 
-func (db *movieConnection) InsertMovie(m models.Movie) models.Movie {
+func (db *elemesConnection) InsertElemes(m models.Elemes) models.Elemes {
 	db.connection.Save(&m)
 	db.connection.Preload("Tag").Find(&m)
 	return m
 }
 
-func (db *movieConnection) UpdateMovie(m models.Movie) models.Movie {
+func (db *elemesConnection) UpdateElemes(m models.Elemes) models.Elemes {
 	db.connection.Save(&m)
-	db.connection.Preload("Topic").Find(&m)
+	db.connection.Preload("Elemes").Find(&m)
 	return m
 }
 
-func (db *movieConnection) DeleteMovie(m models.Movie) {
+func (db *elemesConnection) DeleteElemes(m models.Elemes) {
 	db.connection.Delete(&m)
 }
 
-func (db *movieConnection) FindMovieByID(movieID uint64) models.Movie {
-	var movie models.Movie
-	db.connection.Preload("Topic").Find(&movie, movieID)
-	return movie
+func (db *elemesConnection) FindElemesByID(elemesID uint64) models.Elemes {
+	var elemes models.Elemes
+	db.connection.Preload("Elemes").Find(&elemes, elemesID)
+	return elemes
 }
 
-func (db *movieConnection) AllMovie() []models.Movie {
-	var movies []models.Movie
-	db.connection.Preload("Topic").Find(&movies)
-	return movies
+func (db *elemesConnection) GetCategoryCourse(elemesID uint64) models.Elemes {
+	var elemes models.Elemes
+	db.connection.Preload("Elemes").Find(&elemes, elemesID)
+	return elemes
 }
 
-func (db *movieConnection) PaginationMovie(pagination *dto.Pagination) (RepositoryResult, int) {
+func (db *elemesConnection) AllElemes() []models.Elemes {
+	var elemess []models.Elemes
+	db.connection.Preload("Elemes").Find(&elemess)
+	return elemess
+}
 
-	var moviey []models.Movie
+func (db *elemesConnection) PaginationElemes(pagination *dto.Pagination) (RepositoryResult, int) {
+
+	var elemesy []models.Elemes
 	var count int64
 
-	totalMovie, totalRows, totalPages, fromRow, toRow, toPro := 0, 0, 0, 0, 0, 0
+	totalElemes, totalRows, totalPages, fromRow, toRow, toPro := 0, 0, 0, 0, 0, 0
 
 	offset := pagination.Page * pagination.Limit
 
@@ -99,7 +106,7 @@ func (db *movieConnection) PaginationMovie(pagination *dto.Pagination) (Reposito
 		}
 	}
 
-	find = find.Find(&moviey)
+	find = find.Find(&elemesy)
 	// has error find data
 	errFind := find.Error
 
@@ -107,9 +114,9 @@ func (db *movieConnection) PaginationMovie(pagination *dto.Pagination) (Reposito
 		return RepositoryResult{Error: errFind}, totalPages
 	}
 
-	pagination.Rows = moviey
+	pagination.Rows = elemesy
 	// count all data
-	errCount := db.connection.Model(&models.Movie{}).Count(&count).Error
+	errCount := db.connection.Model(&models.Elemes{}).Count(&count).Error
 
 	if errCount != nil {
 		return RepositoryResult{Error: errCount}, totalPages
@@ -137,21 +144,21 @@ func (db *movieConnection) PaginationMovie(pagination *dto.Pagination) (Reposito
 
 	}
 
-	// count all Movie
-	errCountMovie := db.connection.Model(&models.Movie{}).Count(&count).Error
+	// count all Elemes
+	errCountElemes := db.connection.Model(&models.Elemes{}).Count(&count).Error
 
-	if errCountMovie != nil {
-		return RepositoryResult{Error: errCountMovie}, totalMovie
+	if errCountElemes != nil {
+		return RepositoryResult{Error: errCountElemes}, totalElemes
 	}
 
 	// calculate total pages
-	totalMovie = int(math.Ceil(float64(count)/float64(pagination.Limit))) - 1
+	totalElemes = int(math.Ceil(float64(count)/float64(pagination.Limit))) - 1
 	if pagination.Page == 0 {
 		// set from & to row on first page
 		fromRow = 1
 		toRow = pagination.Limit
 	} else {
-		if pagination.Page <= totalMovie {
+		if pagination.Page <= totalElemes {
 			// calculate from & to row
 			fromRow = pagination.Page*pagination.Limit + 1
 			toRow = (pagination.Page + 1) * pagination.Limit
@@ -160,7 +167,7 @@ func (db *movieConnection) PaginationMovie(pagination *dto.Pagination) (Reposito
 
 	if toPro > int(count) {
 		// set to row with total rows
-		toPro = totalMovie
+		toPro = totalElemes
 	}
 
 	pagination.FromRow = fromRow
