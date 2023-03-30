@@ -24,7 +24,7 @@ type ElemesService interface {
 	GetCategoryCourse(elemesID uint64) models.Elemes
 	IsAllowedToEdit(elemesID uint64) bool
 	PaginationElemes(repo repository.ElemesRepository, context *gin.Context, pagination *dto.Pagination) dto.Response
-	FileUpload(file dto.ElemesCreateDTO) (string, error)
+	FileUpload(file dto.File) (string, error)
 	RemoteUpload(url dto.Url) (string, error)
 }
 
@@ -43,7 +43,7 @@ func NewElemesService(elemesRepo repository.ElemesRepository) ElemesService {
 	}
 }
 
-func (service *elemesService) FileUpload(b dto.ElemesCreateDTO) (string, error) {
+func (service *elemesService) FileUpload(b dto.File) (string, error) {
 	//validate
 	err := validate.Struct(b)
 	if err != nil {

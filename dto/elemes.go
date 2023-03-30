@@ -14,7 +14,9 @@ type ElemesUpdateDTO struct {
 }
 
 type File struct {
-	File multipart.File `json:"file,omitempty" validate:"required"`
+	File       multipart.File `json:"file,omitempty" validate:"required"`
+	Price      float64        `json:"price" form:"price" validate:"required"`
+	NameCourse string         `json:"name_course" form:"name_course" validate:"required"`
 }
 
 type Url struct {

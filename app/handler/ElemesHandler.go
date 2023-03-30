@@ -92,7 +92,11 @@ func (c *elemesHandler) Insert(context *gin.Context) {
 			})
 		return
 	}
-	uploadUrl, err := c.elemesService.FileUpload(dto.ElemesCreateDTO{File: formFile})
+	uploadUrl, err := c.elemesService.FileUpload(dto.File{
+		File:       formFile,
+		Price:      elemesCreateDTO.Price,
+		NameCourse: elemesCreateDTO.NameCourse,
+	})
 	if err != nil {
 		context.JSON(
 			http.StatusInternalServerError,
@@ -108,15 +112,17 @@ func (c *elemesHandler) Insert(context *gin.Context) {
 		dto.MediaDto{
 			StatusCode: http.StatusOK,
 			Message:    "success",
-			Data:       map[string]interface{}{"data": uploadUrl},
+			Data: map[string]interface{}{
+				"title":       elemesCreateDTO.Title,
+				"name_course": elemesCreateDTO.NameCourse,
+				"price":       elemesCreateDTO.Price,
+				"category":    elemesCreateDTO.Category,
+				"file":        uploadUrl,
+			},
 		})
 	if errDTO != nil {
 		res := helpers.BuildErrorResponse("Failed to process request", errDTO.Error(), helpers.EmptyObj{})
 		context.JSON(http.StatusBadRequest, res)
-	} else {
-		result := c.elemesService.Insert(elemesCreateDTO)
-		response := helpers.BuildResponse(true, "OK", result)
-		context.JSON(http.StatusCreated, response)
 	}
 }
 
