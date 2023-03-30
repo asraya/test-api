@@ -21,11 +21,10 @@ type ElemesService interface {
 	Delete(b models.Elemes)
 	All() []models.Elemes
 	FindByID(elemesID uint64) models.Elemes
-	GetCategoryCourse(elemesID uint64) models.Elemes
 	IsAllowedToEdit(elemesID uint64) bool
 	PaginationElemes(repo repository.ElemesRepository, context *gin.Context, pagination *dto.Pagination) dto.Response
-	FileUpload(file dto.File) (string, error)
-	RemoteUpload(url dto.Url) (string, error)
+	FileUpload(file dto.ElemesCreateDTO) (string, error)
+	RemoteUpload(url dto.ElemesCreateDTO) (string, error)
 }
 
 type elemesService struct {
@@ -43,7 +42,7 @@ func NewElemesService(elemesRepo repository.ElemesRepository) ElemesService {
 	}
 }
 
-func (service *elemesService) FileUpload(b dto.File) (string, error) {
+func (service *elemesService) FileUpload(b dto.ElemesCreateDTO) (string, error) {
 	//validate
 	err := validate.Struct(b)
 	if err != nil {
@@ -58,7 +57,7 @@ func (service *elemesService) FileUpload(b dto.File) (string, error) {
 	return uploadUrl, nil
 }
 
-func (service *elemesService) RemoteUpload(b dto.Url) (string, error) {
+func (service *elemesService) RemoteUpload(b dto.ElemesCreateDTO) (string, error) {
 	//validate
 	err := validate.Struct(b)
 	if err != nil {
@@ -66,7 +65,7 @@ func (service *elemesService) RemoteUpload(b dto.Url) (string, error) {
 	}
 
 	//upload
-	uploadUrl, errUrl := helpers.ImageUploadHelper(b.Url)
+	uploadUrl, errUrl := helpers.ImageUploadHelper(b)
 	if errUrl != nil {
 		return "", err
 	}
@@ -107,10 +106,6 @@ func (service *elemesService) FindByID(elemesID uint64) models.Elemes {
 	return service.elemesRepository.FindElemesByID(elemesID)
 }
 
-func (service *elemesService) GetCategoryCourse(elemesID uint64) models.Elemes {
-	return service.elemesRepository.GetCategoryCourse(elemesID)
-}
-
 func (service *elemesService) IsAllowedToEdit(elemesID uint64) bool {
 	b := service.elemesRepository.FindElemesByID(elemesID)
 	id := (b.ID)
@@ -127,26 +122,32 @@ func (service *elemesService) PaginationElemes(repo repository.ElemesRepository,
 
 	var data = operationResult.Result.(*dto.Pagination)
 
+	// get current url path
 	urlPath := context.Request.URL.Path
 
+	// search query params
 	searchQueryParams := ""
 
 	for _, search := range pagination.Searchs {
 		searchQueryParams += fmt.Sprintf("&%s.%s=%s", search.Column, search.Action, search.Query)
 	}
 
-	data.FirstPage = fmt.Sprintf("%s?limit=%d&page=%d&apikey=%s&sort=%s", urlPath, pagination.Limit, 0, pagination.Apikey, pagination.Sort) + searchQueryParams
-	data.LastPage = fmt.Sprintf("%s?limit=%d&page=%d&apikey=%s&sort=%s", urlPath, pagination.Limit, totalPages, pagination.Apikey, pagination.Sort) + searchQueryParams
+	// set first & last page pagination response
+	data.FirstPage = fmt.Sprintf("%s?limit=%d&page=%d&sort=%s", urlPath, pagination.Limit, 0, pagination.Sort) + searchQueryParams
+	data.LastPage = fmt.Sprintf("%s?limit=%d&page=%d&sort=%s", urlPath, pagination.Limit, totalPages, pagination.Sort) + searchQueryParams
 
 	if data.Page > 0 {
-		data.PreviousPage = fmt.Sprintf("%s?limit=%d&page=%d&apikey=%s&sort=%s", urlPath, pagination.Limit, data.Page-1, pagination.Apikey, pagination.Sort) + searchQueryParams
+		// set previous page pagination response
+		data.PreviousPage = fmt.Sprintf("%s?limit=%d&page=%d&sort=%s", urlPath, pagination.Limit, data.Page-1, pagination.Sort) + searchQueryParams
 	}
 
 	if data.Page < totalPages {
-		data.NextPage = fmt.Sprintf("%s?limit=%d&page=%d&apikey=%s&sort=%s", urlPath, pagination.Limit, data.Page+1, pagination.Apikey, pagination.Sort) + searchQueryParams
+		// set next page pagination response
+		data.NextPage = fmt.Sprintf("%s?limit=%d&page=%d&sort=%s", urlPath, pagination.Limit, data.Page+1, pagination.Sort) + searchQueryParams
 	}
 
 	if data.Page > totalPages {
+		// reset previous page
 		data.PreviousPage = ""
 	}
 

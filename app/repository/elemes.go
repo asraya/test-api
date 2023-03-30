@@ -17,7 +17,6 @@ type ElemesRepository interface {
 	DeleteElemes(m models.Elemes)
 	AllElemes() []models.Elemes
 	FindElemesByID(elemesID uint64) models.Elemes
-	GetCategoryCourse(elemesID uint64) models.Elemes
 	PaginationElemes(pagination *dto.Pagination) (RepositoryResult, int)
 }
 
@@ -67,11 +66,10 @@ func (db *elemesConnection) AllElemes() []models.Elemes {
 }
 
 func (db *elemesConnection) PaginationElemes(pagination *dto.Pagination) (RepositoryResult, int) {
-
-	var elemesy []models.Elemes
+	var contacts models.Elemes
 	var count int64
 
-	totalElemes, totalRows, totalPages, fromRow, toRow, toPro := 0, 0, 0, 0, 0, 0
+	totalRows, totalPages, fromRow, toRow := 0, 0, 0, 0
 
 	offset := pagination.Page * pagination.Limit
 
@@ -106,7 +104,8 @@ func (db *elemesConnection) PaginationElemes(pagination *dto.Pagination) (Reposi
 		}
 	}
 
-	find = find.Find(&elemesy)
+	find = find.Find(&contacts)
+
 	// has error find data
 	errFind := find.Error
 
@@ -114,7 +113,8 @@ func (db *elemesConnection) PaginationElemes(pagination *dto.Pagination) (Reposi
 		return RepositoryResult{Error: errFind}, totalPages
 	}
 
-	pagination.Rows = elemesy
+	pagination.Rows = contacts
+
 	// count all data
 	errCount := db.connection.Model(&models.Elemes{}).Count(&count).Error
 
@@ -123,9 +123,9 @@ func (db *elemesConnection) PaginationElemes(pagination *dto.Pagination) (Reposi
 	}
 
 	pagination.TotalRows = int(count)
-
 	// calculate total pages
 	totalPages = int(math.Ceil(float64(count)/float64(pagination.Limit))) - 1
+
 	if pagination.Page == 0 {
 		// set from & to row on first page
 		fromRow = 1
@@ -141,33 +141,6 @@ func (db *elemesConnection) PaginationElemes(pagination *dto.Pagination) (Reposi
 	if toRow > int(count) {
 		// set to row with total rows
 		toRow = totalRows
-
-	}
-
-	// count all Elemes
-	errCountElemes := db.connection.Model(&models.Elemes{}).Count(&count).Error
-
-	if errCountElemes != nil {
-		return RepositoryResult{Error: errCountElemes}, totalElemes
-	}
-
-	// calculate total pages
-	totalElemes = int(math.Ceil(float64(count)/float64(pagination.Limit))) - 1
-	if pagination.Page == 0 {
-		// set from & to row on first page
-		fromRow = 1
-		toRow = pagination.Limit
-	} else {
-		if pagination.Page <= totalElemes {
-			// calculate from & to row
-			fromRow = pagination.Page*pagination.Limit + 1
-			toRow = (pagination.Page + 1) * pagination.Limit
-		}
-	}
-
-	if toPro > int(count) {
-		// set to row with total rows
-		toPro = totalElemes
 	}
 
 	pagination.FromRow = fromRow

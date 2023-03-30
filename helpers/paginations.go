@@ -10,9 +10,9 @@ import (
 )
 
 func GeneratePaginationRequest(context *gin.Context) *dto.Pagination {
+	// default limit, page & sort parameter
 	limit := 10
 	page := 1
-	apikey := "faf7e5bb"
 	sort := "created_at desc"
 
 	var searchs []dto.Search
@@ -29,19 +29,23 @@ func GeneratePaginationRequest(context *gin.Context) *dto.Pagination {
 		case "page":
 			page, _ = strconv.Atoi(queryValue)
 			break
-		case "apikey":
-			apikey = queryValue
-			break
 		case "sort":
 			sort = queryValue
 			break
 		}
+
+		// check if query parameter key contains dot
 		if strings.Contains(key, ".") {
+			// split query parameter key by dot
 			searchKeys := strings.Split(key, ".")
+
+			// create search object
 			search := dto.Search{Column: searchKeys[0], Action: searchKeys[1], Query: queryValue}
+
+			// add search object to searchs array
 			searchs = append(searchs, search)
 		}
 	}
 
-	return &dto.Pagination{Limit: limit, Page: page, Apikey: apikey, Sort: sort, Searchs: searchs}
+	return &dto.Pagination{Limit: limit, Page: page, Sort: sort, Searchs: searchs}
 }

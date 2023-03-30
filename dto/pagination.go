@@ -2,7 +2,6 @@ package dto
 
 type Pagination struct {
 	Limit        int         `json:"limit"`
-	Apikey       string      `json:"apikey"`
 	Page         int         `json:"page"`
 	Sort         string      `json:"sort"`
 	TotalRows    int         `json:"total_rows"`

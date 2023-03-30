@@ -16,7 +16,6 @@ import (
 type ElemesHandler interface {
 	All(context *gin.Context)
 	FindByID(context *gin.Context)
-	GetCategoryCourse(context *gin.Context)
 	Insert(context *gin.Context)
 	Update(context *gin.Context)
 	Delete(context *gin.Context)
@@ -59,24 +58,6 @@ func (c *elemesHandler) FindByID(context *gin.Context) {
 	}
 }
 
-func (c *elemesHandler) GetCategoryCourse(context *gin.Context) {
-	id, err := strconv.ParseUint(context.Param("id"), 0, 0)
-	if err != nil {
-		res := helpers.BuildErrorResponse("No param id was found", err.Error(), helpers.EmptyObj{})
-		context.AbortWithStatusJSON(http.StatusBadRequest, res)
-		return
-	}
-
-	var elemes models.Elemes = c.elemesService.FindByID(id)
-	if &elemes != &elemes {
-		res := helpers.BuildErrorResponse("Data not found", "No data with given id", helpers.EmptyObj{})
-		context.JSON(http.StatusNotFound, res)
-	} else {
-		res := helpers.BuildResponse(true, "OK", elemes)
-		context.JSON(http.StatusOK, res)
-	}
-}
-
 func (c *elemesHandler) Insert(context *gin.Context) {
 	var elemesCreateDTO dto.ElemesCreateDTO
 	errDTO := context.ShouldBind(&elemesCreateDTO)
@@ -92,7 +73,8 @@ func (c *elemesHandler) Insert(context *gin.Context) {
 			})
 		return
 	}
-	uploadUrl, err := c.elemesService.FileUpload(dto.File{
+	uploadUrl, err := c.elemesService.FileUpload(dto.ElemesCreateDTO{
+		Title:      elemesCreateDTO.Title,
 		File:       formFile,
 		Price:      elemesCreateDTO.Price,
 		NameCourse: elemesCreateDTO.NameCourse,
