@@ -17,4 +17,4 @@ RUN go build -o main .
 EXPOSE 9091
 
 # Define the command to run the app when the container starts
-CMD ["/app/main"]
+CMD ["/main"]
